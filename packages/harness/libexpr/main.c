@@ -5,6 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_BUF_SIZE 100
+
 int main(int argc, char **argv) {
   nix_libexpr_init(NULL);
 
@@ -13,10 +15,14 @@ int main(int argc, char **argv) {
       nix_state_create(NULL, NULL, store); // empty search path (NIX_PATH)
   Value *value = nix_alloc_value(NULL, state);
 
-  while (__AFL_LOOP(1000)) {
-    nix_expr_eval_from_string(NULL, state, argv[1], ".", value);
-    nix_value_force(NULL, state, value);
+  char input_buf[MAX_BUF_SIZE];
+
+  if (fgets(input_buf, MAX_BUF_SIZE, stdin) == NULL) {
+    return 1;
   }
+
+  nix_expr_eval_from_string(NULL, state, input_buf, ".", value);
+  nix_value_force(NULL, state, value);
 
   nix_gc_decref(NULL, value);
   nix_state_free(state);
