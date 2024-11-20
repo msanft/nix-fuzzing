@@ -22,9 +22,4 @@ aflxx-stdenv.mkDerivation {
 
     runHook postBuild
   '';
-
-  passthru = {
-    fuzzScript = ''
-      afl-fuzz -i in -o out -- $out/bin/main @@
-  };
 }
