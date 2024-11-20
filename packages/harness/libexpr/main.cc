@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_BUF_SIZE 100
+__AFL_FUZZ_INIT();
 
 int main(int argc, char **argv) {
   nix_libexpr_init(NULL);
@@ -15,16 +15,17 @@ int main(int argc, char **argv) {
       nix_state_create(NULL, NULL, store); // empty search path (NIX_PATH)
   nix_value *value = nix_alloc_value(NULL, state);
 
-  char input_buf[MAX_BUF_SIZE];
+  unsigned char *input_buf;
+  __AFL_INIT();
+  input_buf = __AFL_FUZZ_TESTCASE_BUF;
 
-  if (fgets(input_buf, MAX_BUF_SIZE, stdin) == NULL) {
-    return 1;
-  }
-
-  try {
-    nix_expr_eval_from_string(NULL, state, input_buf, ".", value);
-  } catch (...) {
-    return 1;
+  while (__AFL_LOOP(1000)) {
+    try {
+      nix_expr_eval_from_string(NULL, state, (const char *)input_buf, ".",
+                                value);
+    } catch (...) {
+      return 1;
+    }
   }
 
   // TODO(msanft): imo, this is unnecessary. But clarify with upstream.
