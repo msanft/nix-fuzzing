@@ -18,8 +18,13 @@ aflxx-stdenv.mkDerivation {
     runHook preBuild
 
     mkdir -p $out/bin
-    afl-gcc-fast main.c $(pkg-config nix-expr-c --libs --cflags) -o $out/bin/main
+    afl-g++-fast main.cc $(pkg-config nix-expr-c --libs --cflags) -o $out/bin/main
 
     runHook postBuild
   '';
+
+  passthru = {
+    fuzzScript = ''
+      afl-fuzz -i in -o out -- $out/bin/main @@
+  };
 }

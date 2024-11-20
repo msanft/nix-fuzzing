@@ -13,7 +13,7 @@ int main(int argc, char **argv) {
   Store *store = nix_store_open(NULL, "dummy://", NULL);
   EvalState *state =
       nix_state_create(NULL, NULL, store); // empty search path (NIX_PATH)
-  Value *value = nix_alloc_value(NULL, state);
+  nix_value *value = nix_alloc_value(NULL, state);
 
   char input_buf[MAX_BUF_SIZE];
 
@@ -21,8 +21,14 @@ int main(int argc, char **argv) {
     return 1;
   }
 
-  nix_expr_eval_from_string(NULL, state, input_buf, ".", value);
-  nix_value_force(NULL, state, value);
+  try {
+    nix_expr_eval_from_string(NULL, state, input_buf, ".", value);
+  } catch (...) {
+    return 1;
+  }
+
+  // TODO(msanft): imo, this is unnecessary. But clarify with upstream.
+  // nix_value_force(NULL, state, value);
 
   nix_gc_decref(NULL, value);
   nix_state_free(state);
