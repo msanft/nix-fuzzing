@@ -1,7 +1,7 @@
 {
   stdenv,
   overrideCC,
-  aflplusplus,
+  aflxx,
   wrapCCWith,
   wrapBintoolsWith,
   binutils-unwrapped,
@@ -9,7 +9,7 @@
 }:
 let
   cc = wrapCCWith {
-    cc = aflplusplus;
+    cc = aflxx;
     bintools = wrapBintoolsWith {
       bintools = binutils-unwrapped;
       libc = glibc;
