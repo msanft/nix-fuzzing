@@ -1,7 +1,7 @@
 {
   aflxx-stdenv,
   nix,
-  aflplusplus,
+  aflxx,
   makeSetupHook,
   writeText,
 }:
@@ -17,8 +17,8 @@ let
           preConfigurePhases+=" aflSetupPhase"
 
           aflSetupPhase() {
-            export CC=${aflplusplus}/bin/afl-gcc
-            export CXX=${aflplusplus}/bin/afl-g++
+            export CC=${aflxx}/bin/afl-clang-lto
+            export CXX=${aflxx}/bin/afl-clang-lto++
           }
         ''
       );
