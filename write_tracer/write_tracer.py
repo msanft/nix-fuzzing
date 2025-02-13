@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 from bcc import BPF
 import ctypes as ct
 import os
