@@ -1,0 +1,79 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: Moritz Sanft <58110325+msanft@users.noreply.github.com>
+Date: Wed, 16 Apr 2025 15:27:39 +0200
+Subject: [PATCH] Harness
+
+Signed-off-by: Moritz Sanft <58110325+msanft@users.noreply.github.com>
+---
+ src/crun.c | 35 ++++++++++++++++++-----------------
+ 1 file changed, 18 insertions(+), 17 deletions(-)
+
+diff --git a/src/crun.c b/src/crun.c
+index 9953a28935a044555ef20d92856100e8533b5366..5ab6be4cb690cb98604f1bab2ddba6b9275190a0 100644
+--- a/src/crun.c
++++ b/src/crun.c
+@@ -30,6 +30,7 @@
+ #endif
+ 
+ #include "crun.h"
++#include "libcrun/container.h"
+ #include "libcrun/utils.h"
+ #include "libcrun/custom-handler.h"
+ #include "libcrun/status.h"
+@@ -52,6 +53,8 @@
+ #include "checkpoint.h"
+ #include "restore.h"
+ 
++static libcrun_context_t crun_context;
++
+ static struct crun_global_arguments arguments;
+ 
+ static struct custom_handler_manager_s *handler_manager;
+@@ -427,32 +430,30 @@ int
+ main (int argc, char **argv)
+ {
+   libcrun_error_t err = NULL;
++  cleanup_container libcrun_container_t *container = NULL;
+   int ret, first_argument = 0;
+ 
++  if (argc != 2) return 1;
++
+   arguments.argc = argc;
+   arguments.argv = argv;
+ 
+-#ifdef DYNLOAD_LIBCRUN
+-  if (ensure_cloned_binary () < 0)
+-    {
+-      fprintf (stderr, "Failed to re-execute libcrun via memory file descriptor\n");
+-      _exit (EXIT_FAILURE);
+-    }
+-  /* Resolve all libcrun weak dependencies.  */
+-  if (dlopen ("libcrun.so", RTLD_GLOBAL | RTLD_DEEPBIND | RTLD_LAZY) == NULL)
+-    error (EXIT_FAILURE, 0, "dlopen: %s", dlerror ());
+-#endif
+-
+   fill_handler_from_argv0 (argv[0], &arguments);
+ 
++  crun_context.preserve_fds = 0;
++  crun_context.listen_fds = 0;
++
+   argp_parse (&argp, argc, argv, ARGP_IN_ORDER, &first_argument, &arguments);
+ 
+-  command = get_command (argv[first_argument]);
+-  if (command == NULL)
+-    libcrun_fail_with_error (0, "unknown command %s", argv[first_argument]);
++  ret = init_libcrun_context (&crun_context, argv[first_argument], &arguments, &err);
++  if (UNLIKELY (ret < 0))
++    return ret;
++
++  while (__AFL_LOOP(10000)) {
++    container = libcrun_container_load_from_file (argv[1], &err);
++    if (container == NULL)
++      libcrun_fail_with_error (0, "error loading config.json");
++  }
+ 
+-  ret = command->handler (&arguments, argc - first_argument, argv + first_argument, &err);
+-  if (ret && err)
+-    libcrun_fail_with_error (err->status, "%s", err->msg);
+   return ret;
+ }
